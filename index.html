@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>For You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Caveat:wght@500;700&family=Karla:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!--
+========================================================================
+  EDIT ME — everything you need to change lives in the CONFIG object
+  inside the <script> tag near the bottom of this file.
+
+  1. HER NAME + YOUR LETTER  -> CONFIG.herName / CONFIG.letter
+  2. VIDEO  -> upload your video to YouTube as UNLISTED, then copy the
+     ID from the link. e.g. https://youtu.be/XXXXXXXXXXX  -> the ID is
+     everything after youtu.be/   Paste it into CONFIG.videoId
+  3. SONG   -> same idea, find the song's YouTube video, copy its ID
+     into CONFIG.songId
+  4. PHOTOS -> CONFIG.photos is a list. Each entry needs a "src" (a link
+     to the photo) and a "caption". Upload your photos anywhere that
+     gives you a direct link (e.g. imgur.com, postimages.org, or Google
+     Photos "share -> copy link"), then paste that link into "src".
+     Add or remove entries freely — the layout adjusts automatically.
+     Leave "src" empty ("") to keep a placeholder card.
+========================================================================
+-->
+
+<style>
+  :root{
+    --blush:#f3d6e6;
+    --lavender:#e2d4f5;
+    --peach:#f8e0e8;
+    --cream:#fffaf9;
+    --rose:#a6488a;
+    --red:#b8394a;
+    --ink:#4a2f52;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,var(--cream),var(--blush) 40%,var(--lavender));
+    font-family:'Karla',sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  /* ---------- ENVELOPE ---------- */
+  #envelope-screen{
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,var(--peach),var(--blush));
+    transition:opacity 0.9s ease, visibility 0.9s ease;
+  }
+  #envelope-screen.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+
+  .envelope{
+    position:relative;
+    width:280px; height:180px;
+    cursor:pointer;
+  }
+  .env-body{
+    position:absolute; inset:0;
+    background:var(--cream);
+    border-radius:6px;
+    box-shadow:0 20px 40px rgba(74,53,80,0.25);
+  }
+  .env-flap{
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    background:var(--rose);
+    clip-path:polygon(0 0, 50% 55%, 100% 0);
+    border-radius:6px 6px 0 0;
+    transform-origin:top;
+    transition:transform 0.7s cubic-bezier(.6,-0.1,.3,1.3);
+    z-index:3;
+  }
+  .envelope.open .env-flap{ transform:rotateX(180deg); }
+  .env-heart{
+    position:absolute; top:58%; left:50%; transform:translate(-50%,-50%);
+    font-size:28px; color:var(--rose); z-index:1;
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{transform:translate(-50%,-50%) scale(1);} 50%{transform:translate(-50%,-50%) scale(1.15);} }
+  .env-label{
+    margin-top:26px; text-align:center;
+    font-family:'Caveat',cursive; font-size:22px; color:var(--ink);
+  }
+
+  /* ---------- MAIN ---------- */
+  #main{ opacity:0; transition:opacity 1s ease; }
+  #main.show{ opacity:1; }
+
+  section{
+    max-width:760px; margin:0 auto; padding:70px 24px;
+  }
+
+  h1,h2{ font-family:'Cormorant Garamond',serif; font-weight:600; color:var(--ink); }
+  h1{ font-size:clamp(32px,6vw,52px); text-align:center; margin-bottom:0.2em; }
+  .subtitle{
+    text-align:center; font-family:'Caveat',cursive; font-size:24px; color:var(--rose); margin-top:0;
+  }
+
+  /* letter */
+  .letter{
+    background:var(--cream);
+    border-radius:14px;
+    padding:44px 36px;
+    box-shadow:0 12px 30px rgba(74,53,80,0.10);
+    position:relative;
+  }
+  .letter::before{
+    content:"";
+    position:absolute; top:16px; left:16px; right:16px; bottom:16px;
+    border:1px dashed rgba(179,97,126,0.35);
+    border-radius:8px;
+    pointer-events:none;
+  }
+  .letter p{
+    font-family:'Cormorant Garamond',serif; font-size:19px; line-height:1.8;
+    font-style:italic; white-space:pre-line;
+  }
+  .letter .sign-off{ text-align:right; font-family:'Caveat',cursive; font-size:26px; font-style:normal; color:var(--rose); }
+
+  .letter.poem-accent{ border-top:4px solid var(--red); }
+  .letter.poem-accent::before{ border-color:rgba(184,57,74,0.35); }
+  .letter.poem-accent p{ color:var(--ink); }
+  #poem-title{ color:var(--red); }
+
+  /* video */
+  .video-wrap{
+    border-radius:14px; overflow:hidden;
+    box-shadow:0 12px 30px rgba(74,53,80,0.15);
+    aspect-ratio:16/9; background:var(--ink);
+  }
+  .video-wrap iframe{ width:100%; height:100%; border:0; display:block; }
+  .video-placeholder{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-family:'Caveat',cursive; font-size:22px; text-align:center; padding:20px;
+  }
+
+  /* photos */
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:34px; margin-top:20px;
+  }
+  .polaroid{
+    background:#fff; padding:12px 12px 46px 12px;
+    border-radius:4px; box-shadow:0 10px 24px rgba(74,53,80,0.18);
+    transition:transform 0.25s ease;
+  }
+  .polaroid:nth-child(odd){ transform:rotate(-3deg); }
+  .polaroid:nth-child(even){ transform:rotate(2.5deg); }
+  .polaroid:hover{ transform:rotate(0deg) scale(1.04); }
+  .polaroid img{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; border-radius:2px; }
+  .polaroid .ph-placeholder{
+    width:100%; aspect-ratio:1/1; border:2px dashed rgba(179,97,126,0.4);
+    border-radius:2px; display:flex; align-items:center; justify-content:center;
+    color:var(--rose); font-family:'Karla',sans-serif; font-size:13px; text-align:center; padding:10px;
+    background:repeating-linear-gradient(45deg,var(--peach),var(--peach) 10px,var(--lavender) 10px,var(--lavender) 20px);
+  }
+  .polaroid figcaption{
+    font-family:'Caveat',cursive; font-size:18px; text-align:center; margin-top:10px; color:var(--ink);
+  }
+
+  /* footer */
+  footer{ text-align:center; padding:40px 24px 80px; font-family:'Caveat',cursive; font-size:20px; color:var(--rose); }
+
+  /* music toggle */
+  #music-toggle{
+    position:fixed; bottom:20px; right:20px; z-index:40;
+    width:52px; height:52px; border-radius:50%; border:none;
+    background:var(--rose); color:#fff; font-size:20px; cursor:pointer;
+    box-shadow:0 8px 20px rgba(74,53,80,0.3);
+  }
+  #music-toggle:focus-visible, .envelope:focus-visible{ outline:3px solid var(--ink); outline-offset:3px; }
+  #yt-audio{ position:absolute; width:0; height:0; opacity:0; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<div id="envelope-screen">
+  <div>
+    <div class="envelope" id="envelope" tabindex="0" role="button" aria-label="Open your letter">
+      <div class="env-body"></div>
+      <div class="env-heart">♥</div>
+      <div class="env-flap"></div>
+    </div>
+    <p class="env-label">tap to open</p>
+  </div>
+</div>
+
+<div id="main">
+
+  <section id="hero">
+    <h1 id="hero-title">Happy Birthday</h1>
+    <p class="subtitle" id="hero-subtitle">a little something across the distance</p>
+  </section>
+
+    <div class="letter poem-accent">
+      <p id="poem-body"></p>
+    </div>
+  </section>
+
+  <section id="letter-section">
+    <div class="letter">
+      <p id="letter-body"></p>
+      <p class="sign-off" id="letter-signoff"></p>
+    </div>
+  </section>
+
+  <section id="video-section">
+    <h2>a message for you</h2>
+    <div class="video-wrap" id="video-wrap"></div>
+  </section>
+
+  <section id="photo-section">
+    <h2>us, in pictures</h2>
+    <div class="grid" id="photo-grid"></div>
+  </section>
+
+  <footer id="footer-note"></footer>
+</div>
+
+<button id="music-toggle" aria-label="Play background song">♪</button>
+<div id="yt-audio"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+/* ======================================================================
+   CONFIG — edit everything here
+   ====================================================================== */
+const CONFIG = {
+  herName: "Rose",
+
+  heroTitle: "Happy 25th Birthday, Rose",
+  heroSubtitle: "a little something across the distance",
+
+  poemTitle: "Twenty-Five, From a Distance",
+  poem: `Twenty-five candles, and none of them near me,
+still I'll light one in my heart just to see
+the glow that I know would be lighting your face,
+if only the map didn't stand in our place.
+
+I've loved you through screens and through hours apart,
+through time zones that tried to keep sleep from my heart.
+But nothing they've built, not the miles, not the wait,
+has managed to slow down this love, or its weight.
+
+So here's to you, Rose, at twenty-five years —
+to the laugh that undoes me, the strength through the tears,
+to the girl who made distance feel smaller somehow,
+I love you today, and I'll love you right now.`,
+
+  letter: `My dearest Rose,
+
+Twenty-five. I keep saying it in my head and smiling, because I get to
+watch you become this person — someone even more herself, more sure,
+more radiant — even from far away.
+
+I wish more than anything I could be there right now. I'd want to be
+the first one to hug you this morning, the one making you laugh before
+you even fully wake up, the one who gets to watch you blow out your
+candles. Instead I'm here, writing this, hoping it reaches you the way
+I mean it — with everything I have.
+
+But I want you to know something: the distance has never once made me
+love you less. If anything, it's taught me how much I mean it. Loving
+you through time zones and bad connections and long waits between
+visits isn't easy, but it's never once felt optional. You're worth
+every bit of the hard parts.
+
+I hope today you feel exactly how loved you are — by your family
+around you, and by me, even from here. I hope 25 is the year that
+brings us closer, in every sense of the word. I can't wait for a
+birthday where I don't have to write this from far away — where I get
+to say all of this to your face instead.
+
+Until then: happy birthday, my love. Here's to being twenty-five, and
+to us.
+
+I love you, always.`,
+  signOff: "— yours",
+
+  // YouTube video ID for your personal message. Leave "" for a placeholder.
+  videoId: "",
+
+  // YouTube video ID for the background song. Leave "" to hide the music button.
+  songId: "",
+
+  // Add / remove / edit photo entries freely.
+  photos: [
+    { src: "", caption: "our first photo together" },
+    { src: "", caption: "that trip we took" },
+    { src: "", caption: "your favorite silly face" },
+    { src: "", caption: "the day we said it first" },
+    { src: "", caption: "us, always" },
+    { src: "", caption: "can't wait to add more" }
+  ],
+
+  footerNote: "distance is just a number — I'm still yours ♥"
+};
+/* ==================================================================== */
+
+document.getElementById('hero-title').textContent = CONFIG.heroTitle;
+document.getElementById('hero-subtitle').textContent = CONFIG.heroSubtitle;
+document.getElementById('poem-title').textContent = CONFIG.poemTitle;
+document.getElementById('poem-body').textContent = CONFIG.poem;
+document.getElementById('letter-body').textContent = CONFIG.letter;
+document.getElementById('letter-signoff').textContent = CONFIG.signOff;
+document.getElementById('footer-note').textContent = CONFIG.footerNote;
+
+// Video
+const videoWrap = document.getElementById('video-wrap');
+if (CONFIG.videoId) {
+  videoWrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${CONFIG.videoId}" title="Video message" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+} else {
+  videoWrap.innerHTML = `<div class="video-placeholder">Add your YouTube video ID to CONFIG.videoId<br>to show your message here 🎥</div>`;
+}
+
+// Photos
+const grid = document.getElementById('photo-grid');
+grid.innerHTML = CONFIG.photos.map(p => `
+  <figure class="polaroid">
+    ${p.src ? `<img src="${p.src}" alt="${p.caption}">` : `<div class="ph-placeholder">add photo link<br>in CONFIG.photos</div>`}
+    <figcaption>${p.caption}</figcaption>
+  </figure>
+`).join('');
+
+// Envelope open
+const envelope = document.getElementById('envelope');
+const envelopeScreen = document.getElementById('envelope-screen');
+const main = document.getElementById('main');
+function openEnvelope(){
+  envelope.classList.add('open');
+  setTimeout(() => {
+    envelopeScreen.classList.add('hidden');
+    main.classList.add('show');
+  }, 500);
+}
+envelope.addEventListener('click', openEnvelope);
+envelope.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') openEnvelope(); });
+
+// Background music via YouTube IFrame API
+let player, isPlaying = false;
+const musicBtn = document.getElementById('music-toggle');
+if (!CONFIG.songId) { musicBtn.style.display = 'none'; }
+
+function onYouTubeIframeAPIReady() {
+  if (!CONFIG.songId) return;
+  player = new YT.Player('yt-audio', {
+    height: '0', width: '0', videoId: CONFIG.songId,
+    playerVars: { autoplay: 0, loop: 1, playlist: CONFIG.songId, controls: 0 }
+  });
+}
+musicBtn.addEventListener('click', () => {
+  if (!player) return;
+  if (isPlaying) { player.pauseVideo(); musicBtn.textContent = '♪'; }
+  else { player.playVideo(); musicBtn.textContent = '❚❚'; }
+  isPlaying = !isPlaying;
+});
+</script>
+</body>
+</html>
